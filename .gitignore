@@ -1,0 +1,19 @@
+# Ambiente Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Pesos do modelo (~9.9 GB, baixados com `generate.py --download-only`)
+models/
+
+# Imagens geradas e relatórios
+outputs/*
+!outputs/.gitkeep
+
+# Gradio
+.gradio/
+flagged/
+
+# macOS
+.DS_Store
