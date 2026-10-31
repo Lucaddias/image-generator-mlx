@@ -17,3 +17,6 @@ flagged/
 
 # macOS
 .DS_Store
+
+# Configuração local do Claude Code (servidor de preview)
+.claude/

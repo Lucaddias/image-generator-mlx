@@ -26,12 +26,16 @@ huggingface-hub==1.33.0
 idna==3.20
 jinja2==3.1.6
 kiwisolver==1.5.1
+ltx-core-mlx @ git+https://github.com/dgrauet/ltx-2-mlx.git@895201df379b079c2154738bcf92005b7a371923#subdirectory=packages/ltx-core-mlx
+ltx-pipelines-mlx @ git+https://github.com/dgrauet/ltx-2-mlx.git@895201df379b079c2154738bcf92005b7a371923#subdirectory=packages/ltx-pipelines-mlx
 markdown-it-py==4.2.0
 markupsafe==3.0.3
 matplotlib==3.11.2
 mdurl==0.1.2
 mflux @ git+https://github.com/mflux-community/mflux.git@76f8aeb3f1f1dbccffca524a451f79326bd794f7
 mlx==0.32.2
+mlx-arsenal==0.18.0
+mlx-lm==0.32.2
 mlx-metal==0.32.2
 mpmath==1.3.0
 networkx==3.7
