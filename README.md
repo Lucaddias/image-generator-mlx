@@ -237,6 +237,28 @@ claude "Crie um prompt fotográfico detalhado em inglês para uma cafeteria futu
 
 ---
 
+## 🔁 Uso 5: Pipeline automático (prompt → imagem → vídeo)
+
+O [`pipeline.py`](pipeline.py) lê um lote em YAML e faz tudo sozinho: monta os prompts de imagem e de vídeo, gera as imagens, anima cada uma e marca os arquivos como gerados por IA. Ele retoma de onde parou e também pode observar uma pasta de fila para rodar sem intervenção.
+
+```bash
+.venv/bin/python pipeline.py preview jobs/exemplo.yaml
+```
+
+```bash
+.venv/bin/python pipeline.py run jobs/exemplo.yaml
+```
+
+```bash
+.venv/bin/python pipeline.py watch queue/
+```
+
+Só **personagens fictícios adultos criados por IA**: o fluxo não aceita foto de referência, bloqueia semelhança com pessoas reais e termos ligados a menores, exige idade declarada (mínimo 21) e só anima imagens que o próprio pipeline gerou. Além dos modelos locais, roda qualquer workflow do ComfyUI (por exemplo, Wan 2.2).
+
+Guia completo, pesquisa de plataformas e licenças: [`docs/pipeline-automatico.md`](docs/pipeline-automatico.md). **Leia a seção de licenças antes de gerar conteúdo adulto:** o codificador de texto do vídeo local (Gemma 3) proíbe conteúdo sexualmente explícito.
+
+---
+
 ## 🧯 Solução de problemas
 
 | Problema | Solução |
@@ -261,6 +283,13 @@ claude "Crie um prompt fotográfico detalhado em inglês para uma cafeteria futu
 - [`generate.py`](generate.py): CLI de imagem.
 - [`generate_video.py`](generate_video.py): CLI de vídeo.
 - [`app.py`](app.py): interface web Gradio com abas Imagem e Vídeo, presets e galeria local.
+- [`pipeline.py`](pipeline.py): pipeline automático em lote (prompts → imagens → vídeos), com retomada, fila e procedência.
+- [`prompt_builder.py`](prompt_builder.py): leitura do lote YAML, personagens fictícios, variações automáticas e LLM local opcional.
+- [`content_safety.py`](content_safety.py): travas fixas (só adultos fictícios, sem pessoas reais nem deepfake).
+- [`backends.py`](backends.py): backends do pipeline: local (Qwen + LTX) e ComfyUI.
+- [`jobs/exemplo.yaml`](jobs/exemplo.yaml): lote de exemplo comentado.
+- [`docs/pipeline-automatico.md`](docs/pipeline-automatico.md): guia do pipeline, pesquisa de plataformas e licenças.
+- [`tests/`](tests/): testes das partes que não dependem de GPU (`python -m unittest discover -s tests -t .`).
 - [`requirements.txt`](requirements.txt): dependências com versões fixadas.
 - `models/qwen-image-2.1-turbo-4bit/`: pesos de imagem 4-bit (baixados no passo 5, fora do Git).
 - `models/ltx-2.3-mlx-q4/` e `models/gemma-3-12b-it-4bit/`: pesos de vídeo 4-bit (baixados no passo 7, fora do Git).

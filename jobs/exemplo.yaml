@@ -1,0 +1,120 @@
+# Lote de exemplo do pipeline automático (prompt -> imagem -> vídeo).
+#
+#   .venv/bin/python pipeline.py preview jobs/exemplo.yaml   # confere os prompts, sem GPU
+#   .venv/bin/python pipeline.py run jobs/exemplo.yaml       # gera tudo (retoma se interromper)
+#
+# Regras que o pipeline aplica sozinho e que não dá para desligar:
+#   - Só personagens fictícios criados pela IA. Nada de nomes, fotos ou semelhança com pessoas reais.
+#   - Todo personagem declara idade adulta (mínimo 21), e a idade vai escrita no prompt.
+#   - O vídeo só anima a imagem que o próprio pipeline gerou para aquele job.
+#
+# Os prompts são montados em inglês (os modelos entendem melhor). Escreva os campos em inglês.
+# Este exemplo é neutro: troque cena, roupa, ação e movimento pelo conteúdo que você quiser,
+# dentro das regras acima e das licenças do modelo que usar (veja docs/pipeline-automatico.md).
+
+backend:
+  type: local          # local = Qwen-Image + LTX-2.3 neste Mac | comfyui = ver bloco comentado abaixo
+  low_ram: false       # só no local: lê o modelo de vídeo do disco aos poucos
+
+  # type: comfyui
+  # url: http://127.0.0.1:8188          # ou o endereço do pod na GPU alugada
+  # timeout_seconds: 1800
+  # image:
+  #   workflow: ../workflows/texto_para_imagem_api.json
+  #   inputs:                            # [id do nó, nome da entrada] no workflow exportado
+  #     prompt: ["6", "text"]
+  #     seed: ["3", "seed"]
+  #     width: ["5", "width"]
+  #     height: ["5", "height"]
+  # video:
+  #   workflow: ../workflows/imagem_para_video_api.json
+  #   fps: 16                            # Wan 2.2 14B: 16 fps | Wan 2.2 5B: 24 fps
+  #   frame_multiple: 4                  # Wan usa quadros 4k+1
+  #   inputs:
+  #     prompt: ["6", "text"]
+  #     image: ["52", "image"]           # nó LoadImage
+  #     seed: ["3", "seed"]
+  #     width: ["50", "width"]
+  #     height: ["50", "height"]
+  #     frames: ["50", "length"]
+
+image:
+  width: 768           # local: múltiplo de 32
+  height: 1024
+  lora: null           # opcional, só local: LoRA de personagem fictício treinada com imagens deste pipeline
+
+video:
+  width: 576           # local: múltiplo de 64. Mantenha a mesma proporção da imagem (3:4 aqui)
+  height: 768
+  seconds: 4
+
+# llm:                 # opcional: um LLM local (mlx-lm) enriquece os prompts. Sem isso, só template.
+#   model: models/seu-llm-mlx       # caminho ou repo do Hugging Face; confira a licença dele
+#   max_tokens: 300
+#   temperature: 0.7
+
+# blocked_names_file: ../blocked_names.txt   # opcional: nomes de pessoas reais a bloquear (um por linha)
+
+# Personagens fictícios reutilizáveis. O nome é só uma etiqueta interna: não entra no prompt.
+characters:
+  lara:
+    description: woman with shoulder-length wavy auburn hair, light freckles, green eyes, athletic build
+    age: 29
+  davi:
+    description: man with short black curly hair, trimmed beard, warm brown skin, tall and broad-shouldered
+    age: 34
+
+# Valores aplicados a todos os jobs (cada job pode sobrescrever).
+defaults:
+  style: photo         # photo | cinematic | studio | amateur
+  sound: soft room tone, distant city ambience
+
+jobs:
+  - id: lara-varanda
+    subjects: [lara]
+    wardrobe: oversized linen shirt and denim shorts
+    action: leaning on a balcony railing, looking over her shoulder at the camera
+    scene: sunlit apartment balcony with potted plants, city rooftops in the background
+    lighting: warm golden hour sunlight, soft lens flare
+    motion: she turns toward the camera and smiles as the breeze moves her hair and shirt
+    camera: slow dolly in, shallow depth of field
+
+  - id: davi-estudio
+    subjects: [davi]
+    style: studio
+    wardrobe: black turtleneck
+    action: standing with arms crossed, confident expression
+    scene: dark grey seamless studio backdrop
+    lighting: dramatic side light
+    motion: he uncrosses his arms and adjusts his sleeve, then looks directly into the lens
+    camera: static tripod shot, slight push in
+    sound: quiet studio ambience, fabric rustling
+
+# Geração automática: cria `count` jobs sorteando uma opção de cada lista em `pick`.
+# O sorteio é fixo por índice: aumentar o count mantém os jobs já gerados.
+generate:
+  count: 3
+  seed: 2026
+  id_prefix: lara-variacao
+  base:
+    subjects: [lara]
+    style: cinematic
+  pick:
+    scene:
+      - rainy neon-lit street at night, wet asphalt reflections
+      - minimalist white loft with large windows
+      - quiet beach at dawn, mist over the water
+    wardrobe:
+      - long black trench coat
+      - white summer dress
+      - grey knit sweater
+    lighting:
+      - soft overcast light
+      - neon magenta and cyan rim light
+      - warm tungsten practical lights
+    motion:
+      - she walks slowly toward the camera, then stops and tilts her head
+      - she brushes her hair behind her ear and laughs softly
+    camera:
+      - slow orbit around her
+      - handheld tracking shot following her
