@@ -4,10 +4,10 @@ Pipeline automático: lote YAML -> prompts -> imagens -> vídeos, sem intervenç
 
 Só personagens fictícios criados pela IA. O fluxo começa sempre em texto, não aceita foto de
 referência, e o vídeo só anima imagens geradas pelo próprio pipeline (conferidas por SHA-256).
-Todo prompt passa pelas travas de content_safety.py e todo arquivo sai marcado como gerado por IA.
+Todo prompt passa pela validação de content_safety.py e todo arquivo sai marcado como gerado por IA.
 
 Etapas (cada uma roda para o lote inteiro antes da próxima, para carregar cada modelo uma vez):
-  1. prompts  — template + LLM local opcional, validados pelas travas
+  1. prompts  — template + LLM local opcional, validados
   2. imagens  — backend local (Qwen-Image) ou ComfyUI
   3. vídeos   — imagem -> vídeo no mesmo backend
 
@@ -50,8 +50,7 @@ from prompt_builder import (
 
 DEFAULT_OUT = Path("outputs") / "pipeline"
 NOTICE = (
-    "AI-generated content. Fictional adult characters created entirely by AI; "
-    "does not depict any real person."
+    "AI-generated content. Fictional characters created entirely by AI."
 )
 GENERATOR = "image-generator-mlx/pipeline"
 
@@ -504,7 +503,7 @@ def cmd_watch(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Pipeline automático prompt -> imagem -> vídeo (só personagens fictícios adultos criados por IA)."
+        description="Pipeline automático prompt -> imagem -> vídeo (personagens fictícios criados por IA)."
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

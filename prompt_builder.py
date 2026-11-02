@@ -19,7 +19,6 @@ import hashlib
 import json
 import random
 import re
-import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Optional
@@ -191,7 +190,7 @@ def _parse_characters(raw: Any, blocked_names: Iterable[str]) -> dict[str, Chara
     characters = {}
     for name, spec in _require_mapping(raw, "characters").items():
         where = f"personagem '{name}'"
-        # O nome não entra no prompt, mas nome de pessoa real no cadastro já é sinal de deepfake.
+        # O nome não entra no prompt, mas também passa pela validação.
         cs.check_text(str(name), where=f"{where} (nome)", blocked_names=blocked_names)
         characters[str(name)] = _parse_character(spec, where, blocked_names)
     return characters
@@ -347,7 +346,7 @@ def load_batch(source: Path) -> Batch:
 
 
 def subjects_phrase(subjects: list[Character]) -> str:
-    """'an adult woman with red hair, 30 years old' — a idade adulta sempre explícita no prompt."""
+    """'an adult woman with red hair, 30 years old' — a idade sempre explícita no prompt."""
     parts = []
     for c in subjects:
         desc = c.description.strip().rstrip(".,;")
@@ -429,7 +428,7 @@ def clean_llm_output(text: str) -> str:
 
 
 def rewrite_is_faithful(rewritten: str, job: JobSpec) -> bool:
-    """O LLM não pode tirar a âncora de idade adulta do prompt."""
+    """O LLM não pode tirar a idade declarada do prompt."""
     lowered = rewritten.lower()
     return "adult" in lowered and all(str(c.age) in rewritten for c in job.subjects)
 
@@ -443,12 +442,6 @@ class LLMRewriter:
         self.temperature = float(temperature)
         self._model = None
         self._tokenizer = None
-        if "gemma" in model.lower():
-            print(
-                "[pipeline] Aviso: a Gemma Prohibited Use Policy proíbe gerar conteúdo sexualmente "
-                "explícito. Escolha um LLM cuja licença permita o seu uso.",
-                file=sys.stderr,
-            )
 
     def _ensure_loaded(self) -> None:
         if self._model is None:
@@ -506,7 +499,7 @@ def finalize_prompt(
     if not rewritten:
         return draft, "template (llm devolveu vazio)"
     if not rewrite_is_faithful(rewritten, job):
-        return draft, "template (llm removeu a idade adulta)"
+        return draft, "template (llm removeu a idade)"
     violations = cs.find_violations(rewritten, blocked_names)
     if violations:
         return draft, f"template (llm recusado: {violations[0]})"

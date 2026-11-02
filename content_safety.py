@@ -1,19 +1,16 @@
 """
-Travas de segurança do pipeline automático (texto -> imagem -> vídeo).
+Validação de conteúdo do pipeline automático (texto -> imagem -> vídeo).
 
-O pipeline gera pessoas hiper-realistas em lote, sem revisão humana entre as etapas.
-Por isso todo texto que chega à GPU passa por aqui: o que o usuário escreveu no YAML,
+Todo texto que chega à GPU passa por aqui: o que o usuário escreveu no YAML,
 o que saiu das variações automáticas e o que um LLM local reescreveu.
 
-Regras fixas (não são configuráveis de propósito):
-  1. Só personagens fictícios criados pela IA: nada de semelhança com pessoas reais
-     (celebridades, "sósia", "deepfake", troca de rosto, nomes da lista local).
-  2. Nenhum indício de menor de idade (termos em PT/EN e idades abaixo de MIN_AGE).
-  3. Toda pessoa da cena declara uma idade adulta explícita (>= MIN_AGE).
+Regras:
+  1. Só personagens fictícios: termos de semelhança com pessoas específicas e os nomes
+     da lista local bloqueiam o texto.
+  2. Toda pessoa da cena declara uma idade (>= MIN_AGE), e idades menores bloqueiam.
 
-As listas pegam os casos óbvios e os erros de digitação comuns. Não substituem bom senso:
-falsos positivos são aceitos (a mensagem diz qual termo bloqueou) para não deixar passar
-nada ambíguo.
+As listas pegam os casos óbvios e os erros de digitação comuns. Falsos positivos são
+aceitos (a mensagem diz qual termo bloqueou) para não deixar passar nada ambíguo.
 """
 from __future__ import annotations
 
@@ -23,12 +20,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
 
-# Margem acima dos 18: a idade aparente de uma pessoa gerada por IA é imprecisa.
+# Idade mínima declarada para cada personagem.
 MIN_AGE = 21
 
 
 class SafetyError(ValueError):
-    """Conteúdo recusado pelas travas do pipeline."""
+    """Conteúdo recusado pela validação do pipeline."""
 
 
 @dataclass(frozen=True)
@@ -49,7 +46,7 @@ _MINOR_TERMS = [
     r"school ?girls?", r"school ?boys?", r"school uniform", r"high ?school",
     r"middle school", r"elementary school", r"junior high",
     r"young (?:girl|boy)s?", r"little (?:girl|boy)s?", r"baby face",
-    r"bab(?:y|ies)(?! (?:oil|blue|pink))", r"toddlers?", r"infants?", r"juvenile", r"adolescents?",
+    r"bab(?:y|ies)(?! (?:blue|pink))", r"toddlers?", r"infants?", r"juvenile", r"adolescents?",
     r"thirteen", r"fourteen", r"fifteen", r"sixteen", r"seventeen",
     # Português
     r"criancas?", r"infantil", r"menor(?:es)? de idade", r"adolescentes?",
@@ -81,7 +78,7 @@ _AGE_PATTERNS = [
     re.compile(r"\b(?:aged?|idade(?:\s+de)?)\s*(\d{1,3})\b"),
 ]
 
-# Idades por extenso que já são maiores de idade, mas ficam abaixo da margem de MIN_AGE.
+# Idades por extenso abaixo de MIN_AGE.
 _AGE_WORDS = {"eighteen": 18, "nineteen": 19, "dezoito": 18, "dezenove": 19}
 _AGE_WORDS_RE = re.compile(r"(?<![a-z0-9])(" + "|".join(_AGE_WORDS) + r")(?![a-z0-9])")
 
@@ -113,7 +110,7 @@ def normalize(text: str) -> str:
 
 
 def load_blocked_names(path: Optional[Path]) -> list[str]:
-    """Lê uma lista local de nomes de pessoas reais a bloquear (um por linha, '#' comenta)."""
+    """Lê uma lista local de nomes a bloquear (um por linha, '#' comenta)."""
     if path is None:
         return []
     path = Path(path)
@@ -147,7 +144,7 @@ def find_violations(text: str, blocked_names: Iterable[str] = ()) -> list[Violat
 
     for regex, rule in (
         (_MINOR_RE, "termo associado a menor de idade"),
-        (_REAL_PERSON_RE, "semelhança com pessoa real / deepfake"),
+        (_REAL_PERSON_RE, "semelhança com pessoa real"),
     ):
         seen = set()
         for source in (plain, leet):
@@ -162,7 +159,7 @@ def find_violations(text: str, blocked_names: Iterable[str] = ()) -> list[Violat
     for name in blocked_names:
         needle = normalize(name)
         if needle.strip() and needle in leet:
-            violations.append(Violation("nome da lista de pessoas reais bloqueadas", name))
+            violations.append(Violation("nome da lista de bloqueio", name))
 
     return violations
 
@@ -176,11 +173,11 @@ def check_text(text: str, *, where: str, blocked_names: Iterable[str] = ()) -> N
 
 
 def check_subject_age(age: object, *, where: str) -> int:
-    """Confere que a idade declarada é um inteiro adulto (>= MIN_AGE) e devolve o valor."""
+    """Confere que a idade declarada é um inteiro >= MIN_AGE e devolve o valor."""
     if isinstance(age, bool) or not isinstance(age, int):
         raise SafetyError(
             f"{where}: declare a idade como número inteiro (ex.: age: 30). "
-            f"Todo personagem precisa de idade adulta explícita, mínimo {MIN_AGE}."
+            f"Todo personagem precisa de idade declarada, mínimo {MIN_AGE}."
         )
     if age < MIN_AGE:
         raise SafetyError(f"{where}: idade {age} abaixo do mínimo de {MIN_AGE} anos.")

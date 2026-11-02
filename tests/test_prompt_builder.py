@@ -100,7 +100,7 @@ class PromptTest(unittest.TestCase):
         base.update(kw)
         return pb.JobSpec(**base)
 
-    def test_subjects_phrase_anchors_adult_age(self):
+    def test_subjects_phrase_includes_age(self):
         self.assertEqual(pb.subjects_phrase([pb.Character("a woman with red hair.", 30)]),
                          "an adult woman with red hair, 30 years old")
         two = pb.subjects_phrase([pb.Character("adult man", 40), pb.Character("woman", 35)])

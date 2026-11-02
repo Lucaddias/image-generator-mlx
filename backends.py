@@ -6,7 +6,6 @@ Backends de geração do pipeline automático.
     Você exporta o workflow em "API format" e diz em quais nós entram prompt, seed, imagem etc.
 
 Os dois só recebem texto e, no vídeo, a imagem que o próprio pipeline gerou.
-Não existe entrada de foto de referência: o pipeline não anima nem copia pessoas reais.
 """
 from __future__ import annotations
 

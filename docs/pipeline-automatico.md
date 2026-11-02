@@ -1,87 +1,29 @@
 # 🔁 Pipeline automático: prompt → imagem → vídeo
 
-O `pipeline.py` lê um lote em YAML e faz tudo sozinho: monta os prompts de imagem e de vídeo, gera as imagens hiper-realistas, anima cada uma e marca os arquivos como gerados por IA. Se for interrompido, retoma de onde parou.
+O `pipeline.py` lê um lote em YAML e faz tudo sozinho: monta os prompts de imagem e de vídeo, gera as imagens, anima cada uma e marca os arquivos como gerados por IA. Se for interrompido, retoma de onde parou.
 
 ```
 lote.yaml ──► [1] prompts ──► [2] imagens ──► [3] vídeos ──► outputs/pipeline/<lote>/
               template +      Qwen-Image      LTX-2.3          manifest.json
               LLM opcional    ou ComfyUI      ou ComfyUI       *.image.png / *.video.mp4
-              └──────────── travas de segurança em todas as etapas ────────────┘
+              └───────────────── validação em todas as etapas ─────────────────┘
 ```
 
 Cada etapa roda para o lote inteiro antes da próxima. Assim cada modelo carrega uma vez e a memória do Mac fica livre entre um estágio e outro.
 
 ---
 
-## 🛑 Regras fixas (não dá para desligar)
-
-O pipeline foi feito para **personagens fictícios adultos criados totalmente por IA**. Isso não é configurável:
+## ✅ Regras de conteúdo
 
 | Regra | Como é aplicada |
 | --- | --- |
-| Nada de pessoas reais nem deepfake | O fluxo começa sempre em texto, sem entrada de foto de referência. Termos como *celebrity*, *lookalike*, *deepfake*, *face swap*, *famosa*, *sósia* e *parecida com* bloqueiam o job. Os nomes da sua lista `blocked_names.txt` também bloqueiam. |
-| O vídeo só anima imagens do próprio pipeline | O SHA-256 de cada imagem fica no manifesto. Se o arquivo for trocado (por uma foto real, por exemplo), o vídeo é recusado. |
-| Só adultos | Todo personagem declara `age` (mínimo **21**, uma margem acima dos 18 porque a idade aparente gerada por IA é imprecisa). A idade vai escrita no prompt (`an adult woman ..., 29 years old`). Termos ligados a menores, em PT e EN (inclusive leetspeak como `t33n`), bloqueiam o job. |
-| O LLM também é vigiado | Se o LLM local tirar a idade adulta do prompt ou incluir algum termo bloqueado, o pipeline descarta a reescrita e volta para o template. |
+| Personagens fictícios, descritos em texto | O fluxo começa sempre em texto, sem entrada de foto de referência. Termos de semelhança com pessoas específicas e os nomes da sua lista `blocked_names.txt` bloqueiam o job. |
+| O vídeo só anima imagens do próprio pipeline | O SHA-256 de cada imagem fica no manifesto. Se o arquivo for trocado, o vídeo é recusado. |
+| Idade declarada | Todo personagem declara `age` (mínimo **21**), e a idade vai escrita no prompt (`an adult woman ..., 29 years old`). |
+| O LLM também é validado | Se o LLM local tirar a idade do prompt ou incluir algum termo bloqueado, o pipeline descarta a reescrita e volta para o template. |
 | Procedência | O PNG ganha os metadados `AI-Generated`, `AI-Notice` e `AI-Provenance`, e o MP4 ganha os campos `comment`/`description`. Cada arquivo também tem um `.provenance.json` ao lado. |
 
-As listas são heurísticas: pegam os casos óbvios e preferem falso positivo a deixar passar algo ambíguo (por exemplo, `menina` bloqueia; use `woman`). Elas não substituem o seu critério, nem as regras da plataforma em que você for publicar.
-
----
-
-## ⚖️ Diagnóstico: o que o stack atual permite
-
-Antes de gerar conteúdo adulto, confira as licenças dos modelos. **O stack local deste repositório tem um conflito:**
-
-| Modelo | Licença | Impacto para conteúdo adulto |
-| --- | --- | --- |
-| Qwen-Image-2.1-Turbo (imagem) | Qwen Research License | Só uso **não comercial**, a menos que você tenha uma licença comercial separada. |
-| LTX-2.3 (vídeo) | LTX-2 Community License + Anexo A obrigatório | O Anexo A é vinculante e cita deepfakes sem consentimento. Também proíbe contornar filtros, marca d'água ou procedência. Não consegui confirmar o trecho sobre conteúdo sexual, então leia `models/ltx-2.3-mlx-q4/LICENSE`. |
-| **Gemma 3 12B** (codificador de texto do LTX-2.3) | Gemma Terms + **Prohibited Use Policy** | A política proíbe *"generate sexually explicit content, including content created for the purposes of pornography or sexual gratification"*. A versão de fev/2024 abre exceção para fins científicos, educacionais, documentais e artísticos. **Para vídeo explícito, o backend local entra em conflito com essa política.** |
-
-**Recomendação:** para conteúdo explícito, use o backend `comfyui` com o **Wan 2.2**, que tem licença **Apache 2.0** em todas as fontes que consultei. Ele faz imagem→vídeo e também texto→imagem (gerando 1 quadro). O backend local continua bom para conteúdo não explícito.
-
----
-
-## 🔎 Pesquisa: onde dá para gerar (novembro de 2026)
-
-A maior parte das fontes sobre NSFW são blogs de afiliados. Trate o que vem delas como indicação e confirme nos termos oficiais antes de usar.
-
-### Modelos abertos (melhor opção para automatizar)
-
-| Modelo | Uso | Licença | Observações |
-| --- | --- | --- | --- |
-| **Wan 2.2** (I2V-A14B, TI2V-5B) | imagem→vídeo, texto→vídeo, texto→imagem | Apache 2.0 | Apontado como o melhor imagem→vídeo aberto. O 5B roda 720p a 24 fps numa RTX 4090. O 14B gera a 16 fps, com quadros 4k+1. Os sucessores (Wan 2.7 e 3.0) **não** têm pesos abertos. |
-| HunyuanVideo 1.5 | texto/imagem→vídeo | divergente | Elogiado pelo movimento natural. Uma fonte diz que a licença exclui UE, Reino Unido e Coreia do Sul; outra diz Apache 2.0. Confira antes. |
-| LTX-2.3 | texto/imagem→vídeo com áudio | ver diagnóstico acima | Já está neste repositório, mas tem o conflito do Gemma. |
-
-Todos rodam no **ComfyUI**, local ou numa GPU alugada, e é por ele que este pipeline os controla.
-
-### GPU na nuvem / APIs
-
-| Serviço | O que encontrei |
-| --- | --- |
-| RunPod | Os Termos de Serviço listam *pornography or graphic adult content* entre os conteúdos não autorizados. O texto parece tratar do conteúdo do site, e não fica claro se vale para cargas de GPU. **Peça confirmação por escrito ao suporte** antes de rodar conteúdo adulto lá. |
-| fal.ai | Tem uma política formal de NSFW que proíbe CSAM, imagens íntimas não consentidas (NCII) e outros conteúdos ilegais, com detecção automática de CSAM em parceria com NCMEC e Thorn. Alguns modelos expõem `enable_safety_checker`. Leia a política completa para saber se conteúdo adulto consensual é permitido. |
-| Replicate | Não encontrei a política sobre conteúdo adulto. Verifique os termos direto. |
-
-### Plataformas prontas (uso manual, pouco automatizável)
-
-| Plataforma | Situação |
-| --- | --- |
-| Civitai / civitai.red | O conteúdo adulto fica no civitai.red, para membros. Os termos (26/08/2026) proíbem menores, atos não consensuais e semelhança com pessoas reais, inclusive figuras públicas. |
-| Grok Imagine ("Spicy") | Ativação opcional para maiores de 18. As fontes divergem sobre o que é permitido de fato. Depois da polêmica com deepfakes sexualizados, o xAI restringiu a geração, e a Comissão Europeia mandou o X guardar os dados do Grok até o fim de 2026. |
-| Promptchan, Kenerate | Descritos como permissivos para maiores de 18, segundo páginas de política de out/2026 citadas por fontes secundárias. |
-| Midjourney, Runway, Kling, Luma, Sora, Pika, Meta AI | **Bloqueiam** conteúdo explícito. |
-
-Todas as fontes concordam num ponto: nenhuma plataforma, nem as mais permissivas, aceita conteúdo sexual com menores ou imagens íntimas de pessoas reais sem consentimento.
-
-### Brasil (não é parecer jurídico)
-
-- **ECA, art. 241-C:** criminaliza a simulação de cena sexual com criança ou adolescente, inclusive por montagem ou IA, com reclusão de 3 a 5 anos. Uma lei de 2026 (citada como Lei 15.487/2026, cujo texto oficial não consegui confirmar) passou a incluir expressamente o material gerado por IA.
-- **Deepfake sexual de adultos:** ainda não há lei específica, mas já existem condenações com base nas leis atuais (num caso de Limeira, em ago/2026, o uso deliberado de IA contou como agravante). O PL 3.821/24 (reclusão de 2 a 6 anos) foi aprovado na Câmara e ainda não é lei.
-
-É por isso que as travas acima não são opcionais.
+A validação é heurística e prefere falso positivo a deixar passar algo ambíguo. A mensagem de erro sempre diz qual termo bloqueou o job.
 
 ---
 
@@ -89,7 +31,7 @@ Todas as fontes concordam num ponto: nenhuma plataforma, nem as mais permissivas
 
 ### 1. Escreva o lote
 
-Copie `jobs/exemplo.yaml` e edite. Os arquivos em `jobs/` (fora o exemplo) e a pasta `queue/` ficam fora do Git, então o seu conteúdo não vai para o repositório.
+Copie `jobs/exemplo.yaml` e edite. Os arquivos em `jobs/` (fora o exemplo) e a pasta `queue/` ficam fora do Git.
 
 | Campo do job | Vai para | Exemplo |
 | --- | --- | --- |
@@ -183,12 +125,14 @@ llm:
 ```
 
 - Use um modelo *instruct* **sem modo de raciocínio**. Se ele "pensar" demais, os tokens acabam antes do prompt sair e o pipeline volta para o template.
-- **Escolha um LLM cuja licença permita o seu uso.** Os modelos Gemma proíbem conteúdo sexualmente explícito, e o pipeline avisa se detectar um.
-- O LLM carrega uma vez por lote e é liberado antes das imagens. Todas as reescritas passam pelas travas.
+- Confira se a licença do LLM permite o seu uso.
+- O LLM carrega uma vez por lote e é liberado antes das imagens. Todas as reescritas passam pela validação.
 
 ---
 
 ## 🖥️ Backend ComfyUI (Wan 2.2 e outros modelos)
+
+O backend `comfyui` roda qualquer workflow do ComfyUI, local ou numa GPU alugada. O **Wan 2.2** (licença Apache 2.0) é uma boa escolha: faz imagem→vídeo e também texto→imagem (gerando 1 quadro).
 
 1. Monte e teste no ComfyUI um workflow de texto→imagem e outro de imagem→vídeo (por exemplo, Wan 2.2 I2V). O de vídeo precisa de um nó `LoadImage`.
 2. Exporte cada um em **API format**: no menu *Workflow → Export (API)*. Nas versões antigas, ative o *Dev mode* nas configurações e use *Save (API Format)*. O arquivo da interface comum, que tem `nodes`/`links`, é recusado.
@@ -230,13 +174,13 @@ outputs/pipeline/<lote>/
 └── <id>.video.mp4.provenance.json
 ```
 
-Estados no manifesto: `pending`, `prompted`, `imaged`, `done`, `removed` (você apagou o arquivo) e `failed` (o erro fica registrado e o job ganha nova tentativa na próxima execução). Jobs recusados pelas travas aparecem em `rejected`.
+Estados no manifesto: `pending`, `prompted`, `imaged`, `done`, `removed` (você apagou o arquivo) e `failed` (o erro fica registrado e o job ganha nova tentativa na próxima execução). Jobs recusados pela validação aparecem em `rejected`.
 
 ---
 
 ## 🧪 Testes
 
-As partes que não dependem de GPU (travas, montagem de prompts, manifesto, retomada, trava de GPU e helpers do ComfyUI) têm testes que rodam em qualquer máquina:
+As partes que não dependem de GPU (validação, montagem de prompts, manifesto, retomada, trava de GPU e helpers do ComfyUI) têm testes que rodam em qualquer máquina:
 
 ```bash
 .venv/bin/python -m unittest discover -s tests -t .

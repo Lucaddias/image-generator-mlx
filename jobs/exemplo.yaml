@@ -3,14 +3,13 @@
 #   .venv/bin/python pipeline.py preview jobs/exemplo.yaml   # confere os prompts, sem GPU
 #   .venv/bin/python pipeline.py run jobs/exemplo.yaml       # gera tudo (retoma se interromper)
 #
-# Regras que o pipeline aplica sozinho e que não dá para desligar:
-#   - Só personagens fictícios criados pela IA. Nada de nomes, fotos ou semelhança com pessoas reais.
-#   - Todo personagem declara idade adulta (mínimo 21), e a idade vai escrita no prompt.
+# Regras que o pipeline aplica sozinho:
+#   - Só personagens fictícios, descritos em texto (sem foto de referência).
+#   - Todo personagem declara a idade (mínimo 21), e a idade vai escrita no prompt.
 #   - O vídeo só anima a imagem que o próprio pipeline gerou para aquele job.
 #
 # Os prompts são montados em inglês (os modelos entendem melhor). Escreva os campos em inglês.
-# Este exemplo é neutro: troque cena, roupa, ação e movimento pelo conteúdo que você quiser,
-# dentro das regras acima e das licenças do modelo que usar (veja docs/pipeline-automatico.md).
+# Guia completo: docs/pipeline-automatico.md.
 
 backend:
   type: local          # local = Qwen-Image + LTX-2.3 neste Mac | comfyui = ver bloco comentado abaixo
@@ -53,7 +52,7 @@ video:
 #   max_tokens: 300
 #   temperature: 0.7
 
-# blocked_names_file: ../blocked_names.txt   # opcional: nomes de pessoas reais a bloquear (um por linha)
+# blocked_names_file: ../blocked_names.txt   # opcional: nomes a bloquear (um por linha)
 
 # Personagens fictícios reutilizáveis. O nome é só uma etiqueta interna: não entra no prompt.
 characters:

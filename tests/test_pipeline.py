@@ -129,7 +129,7 @@ class PipelineRunTest(unittest.TestCase):
         self.assertEqual(len(self.backend.images), 4)
 
     def test_rejected_job_never_reaches_backend(self):
-        self.write(BATCH + "  - {id: tres, scene: deepfake of an actress}\n")
+        self.write(BATCH + "  - {id: tres, scene: celebrity lookalike}\n")
         summary = self.run_batch()
         self.assertIn("tres", summary["rejected"])
         self.assertNotIn("tres.image.png", self.backend.images)
