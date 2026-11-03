@@ -11,6 +11,12 @@ models/
 outputs/*
 !outputs/.gitkeep
 
+# Pipeline automático: seus lotes, a fila e a lista de nomes bloqueados ficam só na sua máquina
+jobs/*
+!jobs/exemplo.yaml
+queue/
+blocked_names.txt
+
 # Gradio
 .gradio/
 flagged/
