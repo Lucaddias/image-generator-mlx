@@ -297,9 +297,9 @@ Guia completo: [`docs/pipeline-automatico.md`](docs/pipeline-automatico.md).
 
 ---
 
-## ⚖️ Licenças dos modelos
+## ⚖️ Licenças
 
-Os pesos dos modelos **não** fazem parte deste repositório. Cada um tem a sua licença, que vem junto com os arquivos baixados em `models/`:
+O código deste repositório está sob a licença [MIT](LICENSE). Os pesos dos modelos **não** fazem parte dele. Cada um tem a sua licença, que vem junto com os arquivos baixados em `models/`:
 
 - **Imagem — Qwen-Image-2.1-Turbo:** conversão não oficial para MLX do [Qwen-Image-2.1-Turbo](https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo), sob a **Qwen Research License**: uso para pesquisa/avaliação, **não comercial**, a menos que você obtenha uma licença comercial separada com o detentor dos direitos.
 - **Vídeo — LTX-2.3:** conversão para MLX do LTX-2.3 da Lightricks, sob a **LTX-2 Community License Agreement**. O uso é livre para qualquer finalidade, mas entidades com receita anual de US$ 10 milhões ou mais precisam de uma licença comercial paga. Há também uma lista de usos proibidos (Anexo A), que inclui usar o modelo num produto ou serviço que concorra diretamente com os produtos comerciais da Lightricks sem uma licença separada. Leia o texto completo em `models/ltx-2.3-mlx-q4/LICENSE` antes de usar comercialmente.
