@@ -1,5 +1,7 @@
 # 🎨 Image Generator MLX — imagem e vídeo locais no Apple Silicon
 
+[![testes](https://github.com/Lucaddias/image-generator-mlx/actions/workflows/testes.yml/badge.svg)](https://github.com/Lucaddias/image-generator-mlx/actions/workflows/testes.yml)
+
 Fluxo local completo para geração de **imagens** com **Qwen-Image-2.1-Turbo (7B DiT)** e de **vídeos com áudio** com **LTX-2.3 (22B, destilado)**, otimizados para Macs Apple Silicon via **MLX 4-bit** com carregamento em estágios (*staged loading*). Tudo roda 100% offline depois do download dos modelos.
 
 **Built with Qwen.**

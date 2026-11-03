@@ -1,0 +1,23 @@
+name: testes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  testes:
+    # Só as partes que não dependem de GPU: montagem de prompts, filtros de
+    # conteúdo e o pipeline com um backend falso. Os motores MLX não rodam aqui.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Instala o ffmpeg (os testes conferem a marcação de IA nos vídeos)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Instala as dependências dos testes
+        run: pip install pyyaml==6.0.3 pillow==12.3.0 requests==2.34.2
+      - name: Roda os testes
+        run: python -m unittest discover -s tests -t . -v
